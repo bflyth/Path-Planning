@@ -17,9 +17,9 @@ using json = nlohmann::json;
 
 // Help variables
 double max_speed = 49.9;
-double max_acc = 0.35; //.224
+double max_acc = 0.25; //.224 is recommended. .40 is still within bounds of acceleration and jerk values
 double diff_v = 0;
-double min_dist = 30.0 + max_acc*max_speed; //accounts for any faster or slower speeds when playing with simulator
+double min_dist = 40.0; 
 double min_back_dist = -10.0;
 double dist_target = 30.0;
 bool is_in_lane_change = false;
@@ -298,45 +298,45 @@ int main() {
 			vector<double> v_lane = vector<double>(3, 0.0);
 			int car_lane = -1;
 
-			// Check ego car's lane
+			// our car's lane
 			if (car_d > 0 && car_d < 4) {
 				lane = 0;
 			}
-			// Center lane
+			// center lane
 			else if (car_d > 4 && car_d < 8) {
 				lane = 1;
 			}
-			// Right lane
+			// right lane
 			else if (car_d > 8 && car_d < 12) {
 				lane = 2;
 			}
 
-			// Convert speed to m/s
+			// convert speed to m/s
 			double car_speed_ms = car_speed * 0.44704;
 
-			// Loop through list of Sensor Fusion items
+			// intialize sensor fusion variables
 			for (int i = 0; i < sensor_fusion.size(); i++) {
 
-				// Read detected car's frenet coordinates
+				// read detected car's frenet coordinates
 				const double & s = sensor_fusion[i][5];
 				const double & d = sensor_fusion[i][6];
 
-				// If detected car is not in front or close back skip it
+				// if detected car is not in front or close to our rear, skip it
 				double dist_s = s - car_s;
 				if (dist_s < min_back_dist) {
 					continue;
 				}
 
-				// Check in which lane the detected car is
-				// Left lane
+				// determine which lane is detected
+				// left lane
 				if (d > 0 && d < 4) {
 					car_lane = 0;
 				}
-				// Center lane
+				// center lane
 				else if (d > 4 && d < 8) {
 					car_lane = 1;
 				}
-				// Right lane
+				// right lane
 				else if (d > 8 && d < 12) {
 					car_lane = 2;
 				}
@@ -344,12 +344,12 @@ int main() {
 					continue;
 				}
 
-				// Read detected car's velocity
+				// read detected car velocity
 				const double & v_x = sensor_fusion[i][3];
 				const double & v_y = sensor_fusion[i][4];
 				double v = sqrt(v_x * v_x + v_y * v_y);
 
-				// Check if lane is blocked
+				// check if lane is blocked
 				if (dist_s < min_dist) {
 
 					blocked_lane[car_lane] = true;
@@ -361,16 +361,16 @@ int main() {
 				}
 			}
 
-			// Print lane information from Sensor Fusion
+			// print lane information
 			std::cout << "Lanes " << blocked_lane[0] << " " << blocked_lane[1]
 				<< " " << blocked_lane[2] << std::endl;
 
 			//---------------------------- BEHAVIOUR ---------------------------
 
-			// If car is currently in a lane change maneuver
+			// if car is currently in a lane change maneuver
 			if (is_in_lane_change) {
 
-				// Lane change is over
+				// when lane change is over
 				if (abs(car_d - (aimed_lane * 4 + 2)) < 0.4) {
 					is_in_lane_change = false;
 					std::cout << "Lange change is over" << std::endl;
@@ -380,101 +380,101 @@ int main() {
 				}
 			}
 
-			// If car is not in a lane change maneuver find best action
+			// if car is not in a lane change maneuver find best action
 			if (!is_in_lane_change) {
-				// If car is in center lane
+				// if in center lane
 				if (lane == 1) {
 
-					// And this lane is blocked
+					// this lane is blocked
 					if (blocked_lane[lane]) {
 
-						// And the other lanes are also blocked
+						// the other lanes are also blocked
 						if (blocked_lane[lane - 1] && blocked_lane[lane + 1]) {
 
-							// And the car is faster than the front car
+							// the car is faster than the forward car
 							if (car_speed_ms > v_lane[lane]) {
 								decelerate(dist_lane[lane]);
 							}
-							// And the car is not faster than the front car
+							// or the car is not faster than the forward car
 							else {
 								keepDistance();
 							}
 						}
 
-						// And only the left lane is free
+						// only the left lane is free
 						else if (!blocked_lane[lane - 1] && blocked_lane[lane + 1]) {
 							laneChangeLeft();
 						}
 
-						// And only the right lane is free
+						// only the right lane is free
 						else if (blocked_lane[lane - 1] && !blocked_lane[lane + 1]) {
 							laneChangeRight();
 						}
 
-						// And both lanes are free
+						// both lanes are free
 						else {
-							laneChangeLeft();
+							laneChangeLeft(); //passing on the right is illegal, if not frowned upon and dangerous
 						}
 					}
 
-					// And lane is free
+					// lane is free
 					else {
 						accelerate();
 					}
 				}
 
-				// If car is in left lane
+				// car is in left lane
 				else if (lane == 0) {
 
-					// And this lane is blocked
+					// this lane is blocked
 					if (blocked_lane[lane]) {
 
-						// And the center lane is also blocked
+						// the center lane is also blocked
 						if (blocked_lane[lane + 1]) {
 
-							// And ego car is faster than front car
+							// car is faster than forward car
 							if (car_speed_ms > v_lane[lane]) {
 								decelerate(dist_lane[lane]);
 							}
-							// And ego car is not faster than front car
+							// or car is not faster than forward car
 							else {
 								keepDistance();
 							}
 						}
-						// And center lane is free
+						// center lane is free
 						else {
 							laneChangeRight();
 						}
 					}
-					// And lane is free
+					// lane is free
 					else {
 						accelerate();
 					}
 				}
-				// If car is in right lane
+				// car is in right lane
 				else if (lane == 2) {
 
-					// And this lane is blocked
+					// this lane is blocked
 					if (blocked_lane[lane]) {
 
-						// And the center lane is also blocked
+						// the center lane is also blocked
 						if (blocked_lane[lane - 1]) {
 
-							// And ego car is faster than front car
+							// car is faster than forward car
 							if (car_speed_ms > v_lane[lane]) {
 								decelerate(dist_lane[lane]);
 							}
-							// And ego car is not faster than front car
+							// car is not faster than forward car
 							else {
 								keepDistance();
 							}
 						}
-						// And center lane is free
+						// center lane is free
 						else {
 							laneChangeLeft();
 						}
 					}
-					// And lane is free
+					// lane is free
 					else {
 						accelerate();
 					}
@@ -483,22 +483,18 @@ int main() {
 
 			//---------------------- TRAJECTORY PLANNING -----------------------
 
-			// Buffer variables
-
-
-
 			int prev_size = previous_path_x.size();
 
-			// Buffer variables
+			// buffer variables
 			vector<double> x_points;			
 			vector<double> y_points;
 			
-			// Reference state
+			// reference state
 			double ref_x = car_x;
 			double ref_y = car_y;
 			double ref_yaw = deg2rad(car_yaw);
 
-			// If previous points have less than two values	
+			// previous points have less than two values	
 			if (prev_size < 2) {
 				double prev_car_x = car_x - cos(car_yaw);
 				double prev_car_y = car_y - sin(car_yaw);
@@ -509,7 +505,7 @@ int main() {
 				y_points.push_back(prev_car_y);
 				y_points.push_back(car_y);
 			}
-
+			
 			else {
 				ref_x = previous_path_x[prev_size - 1];
 				ref_y = previous_path_y[prev_size - 1];
@@ -528,11 +524,11 @@ int main() {
 
 
 
-			// Defining next way points
+			// create next way points
 			vector<double> next_way_pts_0 = getXY(car_s + 50, 2 + 4 * aimed_lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 			vector<double> next_way_pts_1 = getXY(car_s + 60, 2 + 4 * aimed_lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-
 			vector<double> next_way_pts_2 = getXY(car_s + 90, 2 + 4 * aimed_lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+
 			x_points.push_back(next_way_pts_0[0]);
 			x_points.push_back(next_way_pts_1[0]);
 			x_points.push_back(next_way_pts_2[0]);
@@ -541,7 +537,7 @@ int main() {
 			y_points.push_back(next_way_pts_1[1]);
 			y_points.push_back(next_way_pts_2[1]);
 
-			// Transform them to local coordinates
+			// transform to cars local coordinates
 			for (int i = 0; i < x_points.size(); i++) {
 
 				double shift_x = x_points[i] - ref_x;
@@ -552,12 +548,12 @@ int main() {
 				y_points[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
 			}
 
-			// Fit spline.
+			// initialize and fit spline.
 			tk::spline s;
 			s.set_points(x_points, y_points);
 
 
-			// Use path points from previous path for smoothness
+			// use path points from previous path for smoothness
 			vector<double> next_x_vals;
 			vector<double> next_y_vals;
 
@@ -566,16 +562,16 @@ int main() {
 				next_y_vals.push_back(previous_path_y[i]);
 			}
 			
-			// Calculate target 30 m ahead
+			// calculate targets 30 m ahead
 			double target_x = dist_target;
 			double target_y = s(target_x);
 			double target_dist = sqrt(target_x*target_x + target_y * target_y);
 			double x_add_on = 0;
 
-			// Loop through waypoints
+			// check through waypoints
 			for (int i = 1; i < 50 - prev_size; i++) {
 
-				// Find target speed
+				// determine target speed
 				target_v += diff_v;
 				if (target_v > max_speed) {
 					target_v = max_speed;
@@ -585,13 +581,13 @@ int main() {
 					target_v = max_acc;
 				}
 
-				// Get points
+				// determine points
 				double N = target_dist / (0.02 * target_v / 2.24);
 				double x_point = x_add_on + target_x / N;
 				double y_point = s(x_point);
 				x_add_on = x_point;
 
-				// Add transformed reference points
+				// apply reference points
 				double x_ref = x_point;
 				double y_ref = y_point;
 
@@ -601,7 +597,7 @@ int main() {
 				x_point += ref_x;
 				y_point += ref_y;
 
-				// Push back xy pair
+				// push back xy pair
 				next_x_vals.push_back(x_point);
 				next_y_vals.push_back(y_point);
 			}
