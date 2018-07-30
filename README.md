@@ -1,6 +1,18 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+![image1](6miles.png)
+
+### Writeup
+My car drives perfectly around the 7 km loop while slowing done to avoid other vehicles, changing lanes when necessary, and speeding up when the lane is free.
+
+To accomplish all this I first began with the project Q&A Walkthrough. This gave me the basis of my code, which can be found between lines 484 and 603. There are a few things in that base code that were implemented at a later state such as determining the target speed at line 574. The walkthrough taught me how to get the vehicle moving in a straight line at the speed limit, then along the lane lines, and finally along the lane lines while slowing down and changing lanes (only switching to the left lane when the middle was blocked). I built off this system by implementing a few cases and writing behavioral functions.
+
+Lines 179-214 in main.cpp contain the behavioral functions such as acceleration, deceleration and lane switching. These functions are called depending on a case system that can be seen in my behavior section between lines 368 and 483. This contains three cases depending on which lane the car is in, and each case contains a few more if statements to determine the most practical and effective path to take. An example being: the car is in the middle lane and there is a slow vehicle in front. The left lane is blocked, but right lane is free. The car will choose to run laneChangeRight() and then scan the new lane for vehicles. These three cases are all constantly checked while the car is not in a lane change maneuver. 
+
+The last important section is sensor fusion. Line 317 begins the initialization of sensors and determining which lane detected vehicles are in, along with the velocity of these vehicles for reference when scanning the road during the behavioral section.
+
+All in all the car drives really well and has gone over 6 miles at a time. [image1]
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).
 
@@ -137,8 +149,3 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
-# Path-Planning
-# Path-Planning
-# Path-Planning
-# Path-Planning
