@@ -11,7 +11,9 @@ Lines 179-214 in main.cpp contain the behavioral functions such as acceleration,
 
 The last important section is sensor fusion. Line 371 begins the initialization of sensors and determining which lane detected vehicles are in, along with the velocity of these vehicles for reference when scanning the road during the behavioral section.
 
-All in all the car drives really well and has gone over 6 miles at a time. ![image1](images/6miles.PNG)
+I tried to push the limits of acceleration and close the distances of vehicles, but at an acceleration of .4 and a distance of 25.0 the car made some bad decisions once in a while. This run managed to reach about 6 miles, but would lightly collide with vehicles during lane change, or would exceed the AccTotal and Jerk values. ![image1](images/6miles.PNG)
+
+All in all the car drives really well and has gone over 28 miles at a time. ![image1](images/28miles.PNG)
 
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).
